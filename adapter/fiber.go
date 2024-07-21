@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"fmt"
 )
 
 const contextUserValueKey = "github.com/its-felix/aws-lambda-go-http-adapter/adapter/fiber::contextUserValueKey"
@@ -58,9 +59,16 @@ func (a fiberAdapter) adapterFunc(ctx context.Context, r *http.Request, w http.R
 		}
 	}
 
-	// remoteAddr
-	remoteAddr, err := net.ResolveTCPAddr("tcp", r.RemoteAddr)
+	addrWithPort := r.RemoteAddr
+	if strings.Count(r.RemoteAddr, ":") > 3 { // IPv6
+		if !strings.Contains(r.RemoteAddr, "[") {
+			addrWithPort = fmt.Sprintf("[%s]:http",strings.Split(r.RemoteAddr, ":http")[0])
+		}
+	}
+
+	remoteAddr, err := net.ResolveTCPAddr("tcp", addrWithPort)
 	if err != nil {
+		fmt.Printf("could not resolve TCP address for addr %s\n", r.RemoteAddr)
 		return err
 	}
 
